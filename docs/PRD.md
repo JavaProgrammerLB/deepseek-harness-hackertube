@@ -11,7 +11,7 @@
 3. 获取真实运行截图或录屏，不以示意图冒充效果。
 4. 最后开发展示网站：中文、简洁、有趣字体，参考小书童风格。
 
-先前落地页 PR 已被 Bill 关闭；本次不恢复该 PR、不合并旧落地页、不开始插件代码开发。
+先前落地页 PR 已被 Bill 关闭。不恢复该 PR，不合并旧落地页。展示网站仍等插件在 Mac 上跑通之后。
 
 ## 2. 已确认需求
 
@@ -69,16 +69,21 @@
 | 异常恢复 | 验证网络不可用、空列表、字段缺失、图片失败、打开失败时的反馈和恢复。 |
 | 真实素材 | 在实际 Mac 记录提示、真实列表与 Chrome 跳转效果，然后才制作网站素材。 |
 
-## 6. 开发前技术核实（尚未验证）
+## 6. 尚未在 Bill 的 Mac 上验证
 
-- Bill 安装的 DeepSeek Harness 版本、运行形态与插件安装方式。
-- 参考插件注册侧栏、手动入口、工作状态提示的接口，以及当前版本兼容性。
-- HackTube 首页真实数据来源、字段、排序、动态加载边界，以及 YouTube 目标 URL 映射。
-- Mac 上明确指定 Chrome 打开链接的可用方式。参考插件使用系统默认浏览器，不可视为已满足本项目要求。
-- 切换对话时侧栏生命周期由 Harness 如何控制；不承诺未经验证的跨对话保留。
-- 目标链接校验：只按本功能打开有效 YouTube 地址，不把外部内容拼成可执行命令。
+- Bill 安装的 DeepSeek Harness 版本、运行形态，以及 `dsh plugin add` 在那一版上的真实安装命令。
+- 参考插件的侧栏、手动入口和工作提示接口，在 Bill 的 Harness 版本上是否仍是同一套。
+- `open -a "Google Chrome"` 在 Bill 的机器上是否真的打开 Chrome。Linux 上的检查不能代替这项。
+- 切换对话时侧栏是否被 Harness 卸载。参考插件把侧栏标签算在当前对话上。本插件不承诺换对话后侧栏还开着。
 
-技术核实若影响体验或范围，先修订 PRD，不静默扩大功能或改变播放去向。
+## 9. 实现时已核实的边界
+
+这些是写插件时对着当前参考仓库和 HackTube 首页核对过的事实，不是 Mac 验收结果。
+
+- 参考插件 `frostming/dsh-hongguo` 的 Host 用 `apply(ctx)` 注册 `/api/...` 前缀。Client 用 `sidebarRightTabs.register`、`sidebar.right.pane.tab`、`sidebar.footer.action` 和 `conversation.input.dock`。工作提示读 `useSessionStatus` 的 `running`。侧栏是否正在显示，它查的是当前页面里的面板，而不是跨会话的标签列表。它打开系统浏览器用的是 `open` 或 `xdg-open`，不是指定 Chrome。
+- HackTube 首页第一屏请求 `GET https://hackertube.org/api/feed?offset=0&n=36&seed=<数字>`。响应是视频数组，顺序就是这次 seed 的顺序。响应没有 `Access-Control-Allow-Origin`，所以由 Host 去请求。插件不跟无限滚动，也不读全库 `/api/list`。
+- 展示用到 `title`、`thumbnail`、`channel`、`duration_s`、`vid`。`vid` 只接受 11 位 YouTube id。打开地址由插件拼成 `https://www.youtube.com/watch?v=` 加这个 id。调用方传来的其它 URL 不采用。
+- macOS 上启动命令是 `open`，参数为 `-a`、`Google Chrome`、上面这个地址。参数分开传，不拼进 shell。其它系统直接失败，并给出可复制地址。
 
 ## 7. 非目标
 
