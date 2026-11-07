@@ -1,0 +1,204 @@
+@font-face {
+  font-family: "Fraunces";
+  src: url("/fonts/fraunces-wordmark.woff2") format("woff2");
+  font-weight: 560;
+  font-display: swap;
+  font-synthesis: none;
+  unicode-range: U+0048, U+0054, U+0061, U+0062, U+0063, U+0065, U+006B, U+0072, U+0075;
+}
+
+@font-face {
+  font-family: "Ma Shan Zheng";
+  src: url("/fonts/mashan-mission.woff2") format("woff2");
+  font-display: swap;
+  font-synthesis: none;
+  unicode-range: U+4E00, U+4FA7, U+5E72, U+6478, U+65F6, U+6761, U+680F, U+6D3B, U+FF0C;
+}
+
+:root {
+  color-scheme: light;
+  --ink: #252720;
+  --ink-soft: #4c4f44;
+  --ink-meta: #6d7066;
+  --paper: #f7f5ee;
+  --paper-edge: #e0dcd2;
+  --accent: #2a6844;
+  --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", "WenQuanYi Micro Hei", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html { height: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100%;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: var(--sans);
+  font-size: 1rem;
+  line-height: 1.7;
+  text-rendering: optimizeLegibility;
+}
+
+:focus { outline: none; }
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+::selection { background: #e4e0d4; color: var(--ink); }
+
+.skip {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 2;
+  padding: 0.4rem 0.7rem;
+  background: var(--ink);
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.skip:focus { top: 0.6rem; }
+
+.frame {
+  width: min(40rem, calc(100% - 2.5rem));
+  margin-inline: auto;
+  padding-bottom: 2.5rem;
+}
+
+.masthead {
+  display: flex;
+  flex-direction: column;
+  padding-top: clamp(2.25rem, 6vw, 3.75rem);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  align-self: flex-start;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand img { width: 2.5rem; height: 2.5rem; }
+
+.wordmark {
+  font-family: "Fraunces", Georgia, "Songti SC", serif;
+  font-size: 1.85rem;
+  font-weight: 560;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-synthesis: none;
+}
+
+.mission {
+  margin: 0.7rem 0 0;
+  color: var(--accent);
+  font-family: "Ma Shan Zheng", "Kaiti SC", "STKaiti", "KaiTi", serif;
+  font-size: 1.35rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  line-height: 1.45;
+  font-synthesis: none;
+}
+
+.lede {
+  max-width: 36em;
+  margin: 0.85rem 0 0;
+  color: var(--ink-soft);
+  font-size: 1.0625rem;
+  font-weight: 400;
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+.work {
+  margin: 2.25rem 0 0;
+  width: min(100%, 34rem);
+}
+
+.work img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 2 / 1;
+  max-height: min(280px, 42vw);
+  object-fit: cover;
+  border: 1px solid var(--paper-edge);
+  background: var(--paper-edge);
+}
+
+.work h2 {
+  margin: 0.7rem 0 0;
+  font-family: inherit;
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.work p {
+  max-width: 36em;
+  margin: 0.45rem 0 0;
+  color: var(--ink-soft);
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+.prose { padding-top: 0.25rem; }
+
+.prose h1 {
+  margin: 2rem 0 0;
+  font-family: inherit;
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.prose p {
+  max-width: 36em;
+  margin: 1.15rem 0 0;
+  color: var(--ink-soft);
+}
+
+.more { margin: 1.75rem 0 0; }
+
+.more a {
+  color: var(--accent);
+  text-underline-offset: 0.22em;
+}
+
+.more a:hover { color: var(--ink); }
+
+footer {
+  margin-top: 3rem;
+  color: var(--ink-meta);
+  font-size: 0.875rem;
+}
+
+footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.55rem;
+}
+
+footer a {
+  color: inherit;
+  text-decoration: none;
+}
+
+footer a:hover { text-decoration: underline; text-underline-offset: 0.18em; }
+
+.dot { user-select: none; }
+
+@media (max-width: 40rem) {
+  .frame { width: min(40rem, calc(100% - 2rem)); }
+  .wordmark { font-size: 1.65rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto; }
+}
