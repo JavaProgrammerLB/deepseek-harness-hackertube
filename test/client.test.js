@@ -8,8 +8,12 @@ const host = readFileSync(new URL('../index.js', import.meta.url), 'utf8')
 
 test('the prompt uses the same rule as showPrompt and names no video', () => {
   assert.match(domain, /running === true && sidebarVisible !== true/)
-  assert.match(client, /status\?\.running === true && sidebarVisible !== true/)
+  assert.match(client, /running === true && sidebarVisible !== true/)
+  assert.match(client, /useSession\(\(snapshot\) => snapshot\.running === true\)/)
+  assert.match(client, /data-sidebar-right-open/)
+  assert.match(client, /visibleW >= 8 && visibleH >= 8/)
   const prompt = client.slice(client.indexOf('function Prompt'), client.indexOf('function FooterButton'))
+  assert.equal(prompt.includes('useSessionStatus'), false)
   assert.equal(prompt.includes('.title'), false)
   assert.equal(prompt.includes('thumbnail'), false)
   assert.match(prompt, /看首页视频/)

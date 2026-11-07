@@ -69,12 +69,12 @@
 | 异常恢复 | 验证网络不可用、空列表、字段缺失、图片失败、打开失败时的反馈和恢复。 |
 | 真实素材 | 在实际 Mac 记录提示、真实列表与 Chrome 跳转效果，然后才制作网站素材。 |
 
-## 6. 尚未在 Bill 的 Mac 上验证
+## 6. 已在 Bill 的 Mac 上核实
 
-- Bill 安装的 DeepSeek Harness 版本、运行形态，以及 `dsh plugin add` 在那一版上的真实安装命令。
-- 参考插件的侧栏、手动入口和工作提示接口，在 Bill 的 Harness 版本上是否仍是同一套。
-- `open -a "Google Chrome"` 在 Bill 的机器上是否真的打开 Chrome。Linux 上的检查不能代替这项。
-- 切换对话时侧栏是否被 Harness 卸载。参考插件把侧栏标签算在当前对话上。本插件不承诺换对话后侧栏还开着。
+- DeepSeek Harness 0.2.2-rc.1，桌面应用，配置档是 `desktop`。安装命令是 `dsh plugin --profile desktop add <仓库路径>`。先完全退出应用再装，装完再打开。
+- 右侧栏注册、底部「视频」和 `conversation.input.dock` 仍然可用。输入框上方入口订阅这条 slot 自带的 `useSession`，工作状态是 `snapshot.running`。收起右侧栏后列表面板仍挂在文档里，并保留上次的宽度，只是被窗口裁掉。所以“侧栏正在显示”看宿主标在面板上的 `data-sidebar-right-open`，再确认它有一块落在窗口里，不是看元素自身宽高。
+- `open -a "Google Chrome"` 会打开 Chrome。已用首页条目 `4PaWFYm0kEw` 打开 `https://www.youtube.com/watch?v=4PaWFYm0kEw`。
+- 切换对话时侧栏是否被 Harness 卸载，还没有单独验收。参考插件把侧栏标签算在当前对话上。本插件不承诺换对话后侧栏还开着。
 
 ## 9. 实现时已核实的边界
 

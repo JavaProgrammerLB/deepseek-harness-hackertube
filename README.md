@@ -6,21 +6,15 @@
 
 ## 安装
 
-下面的安装方式还没有在 Bill 的 Mac 上验收。Harness 和 Chrome 需要在同一台电脑。
-
-参考插件用的是这条命令：
+在 Bill 的 Mac 上，DeepSeek Harness 0.2.2-rc.1 用的是 `desktop` 配置档。先完全退出应用，再安装这个仓库里的插件，然后重新打开应用。
 
 ```sh
-dsh plugin add github:frostming/dsh-hongguo
+dsh plugin --profile desktop add /path/to/deepseek-harness-hackertube
 ```
 
-本插件预计同样写成：
+`dsh` 在应用包里：`/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh`。
 
-```sh
-dsh plugin add github:JavaProgrammerLB/deepseek-harness-hackertube
-```
-
-如果当前 Harness 不认这个地址，把仓库克隆到本机，再按那一版 Harness 的本地插件方式启用 `dsh-hackertube`。改完后重启 `dsh web`。
+这条命令会把 `dsh-hackertube` 写进 `~/.dsh/profiles/desktop` 的依赖和 bundle 列表。仓库当前在开发分支上时，用本地路径，不要装 GitHub 默认分支：默认分支还没有插件代码。装完后完全退出并重新打开 DeepSeek Harness。
 
 ## 使用
 

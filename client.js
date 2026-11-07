@@ -16,28 +16,36 @@ window.__ModuleLoader__.load({
       }
     }
 
-    function Prompt({ sessionId, useSessionStatus, shouldHide }) {
-      const status = useSessionStatus
-        ? useSessionStatus((snapshot) => (sessionId ? snapshot.get(sessionId) : undefined))
-        : undefined
+    function listIsShowing() {
+      const root = document.querySelector('.ht-root')
+      if (!root) return false
+      // Collapsed panels stay mounted with their last width, clipped by the
+      // window. The host marks the open panel with data-sidebar-right-open.
+      const panel = root.closest('[data-sidebar-right-panel]')
+      if (!panel || panel.getAttribute('data-sidebar-right-open') === null) return false
+      const box = root.getBoundingClientRect()
+      const visibleW = Math.min(box.right, window.innerWidth) - Math.max(box.left, 0)
+      const visibleH = Math.min(box.bottom, window.innerHeight) - Math.max(box.top, 0)
+      return visibleW >= 8 && visibleH >= 8
+    }
+
+    function Prompt({ session, useSession, shouldHide }) {
+      const liveRunning = useSession((snapshot) => snapshot.running === true)
       const [sidebarVisible, setSidebarVisible] = React.useState(false)
 
       React.useEffect(() => {
-        // openTabs lists every session, so it cannot say whether this page
-        // is showing the list. A mounted panel in this document can.
-        const read = () => {
-          const root = document.querySelector('.ht-root')
-          const visible = Boolean(root && root.offsetParent !== null && root.getClientRects().length > 0)
-          setSidebarVisible(visible)
-        }
+        const read = () => setSidebarVisible(listIsShowing())
         read()
         const timer = setInterval(read, 800)
         return () => clearInterval(timer)
       }, [])
 
       if (typeof shouldHide === 'function' && shouldHide()) return null
-      if (!(status?.running === true && sidebarVisible !== true)) return null
-      return h('button', { type: 'button', className: 'ht-prompt', onClick: openList }, '看首页视频')
+      const running = liveRunning === true || session?.running === true
+      if (!(running === true && sidebarVisible !== true)) return null
+      return h(React.Fragment, null,
+        h('style', null, '.ht-prompt { display: inline-flex; align-self: flex-start; width: fit-content; margin: 8px 12px; border: 1px solid #ccc; background: #fff; color: #1c1c1c; border-radius: 999px; padding: 6px 12px; font: 14px/1.4 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; cursor: pointer; }'),
+        h('button', { type: 'button', className: 'ht-prompt', onClick: openList }, '看首页视频'))
     }
 
     function FooterButton(props) {
@@ -241,6 +249,7 @@ async function postJson(path, body) {
 const CSS = `
 .ht-root { box-sizing: border-box; height: 100%; overflow: auto; padding: 12px 14px 20px; color: #1c1c1c; background: #fff; font: 14px/1.45 -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", sans-serif; }
 .ht-root * { box-sizing: border-box; }
+.ht-root button { color: #1c1c1c; }
 .ht-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .ht-bar button, .ht-problem button, .ht-prompt, .ht-foot { font: inherit; cursor: pointer; }
 .ht-bar button, .ht-problem button { border: 1px solid #ccc; background: #fff; border-radius: 6px; padding: 4px 10px; }
@@ -255,5 +264,5 @@ button.ht-row { cursor: pointer; }
 .ht-copy { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .ht-title { font-weight: 600; }
 .ht-meta, .ht-miss, .ht-open { color: #666; font-size: 12px; }
-.ht-prompt { display: inline-flex; margin: 8px 12px; border: 1px solid #ccc; background: #fff; border-radius: 999px; padding: 6px 12px; }
+.ht-prompt { display: inline-flex; align-self: flex-start; width: fit-content; margin: 8px 12px; border: 1px solid #ccc; background: #fff; color: #1c1c1c; border-radius: 999px; padding: 6px 12px; }
 `
