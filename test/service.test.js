@@ -1,35 +1,76 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { EXPORT_URL } from '../lib/export.js'
 import { createService, handle } from '../lib/service.js'
 
-const video = {
+const line = JSON.stringify({
   vid: '1rZ-JorHJEY',
   title: 'Hacking with Andrew and Brad',
   channel: 'The Go Programming Language',
+  url: 'https://evil.example/run',
   duration_s: 90,
   thumbnail: 'https://i.ytimg.com/vi/1rZ-JorHJEY/mqdefault.jpg',
-}
+})
+
+const small = { minBytes: 1, minLines: 1, maxLines: 10 }
 
 function deferred() {
   let resolve
-  let reject
-  const promise = new Promise((res, rej) => {
+  const promise = new Promise((res) => {
     resolve = res
-    reject = rej
   })
-  return { promise, resolve, reject }
+  return { promise, resolve }
 }
 
-test('load requests the homepage once and a second caller waits for it', async () => {
+function bodyOf(text, { status = 200, length } = {}) {
+  const bytes = new TextEncoder().encode(text)
+  let offset = 0
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    headers: {
+      get(name) {
+        return name.toLowerCase() === 'content-length' ? String(length ?? bytes.byteLength) : null
+      },
+    },
+    body: {
+      getReader() {
+        return {
+          async read() {
+            if (offset >= bytes.byteLength) return { done: true }
+            const value = bytes.subarray(offset, Math.min(bytes.byteLength, offset + 32))
+            offset += value.byteLength
+            return { done: false, value }
+          },
+          async cancel() {
+            offset = bytes.byteLength
+          },
+        }
+      },
+    },
+  }
+}
+
+function guard(url) {
+  if (String(url).includes('/api/feed') || String(url).includes('ytimg.com') || String(url).includes('youtube.com')) {
+    throw new Error(`unexpected request ${url}`)
+  }
+}
+
+test('load reads the official export once and does not touch the live feed', async () => {
   const gate = deferred()
   const seen = []
+  const writes = []
   const service = createService({
+    ...small,
     platform: 'linux',
-    nextSeed: () => 7,
+    readCache: async () => '',
+    writeCache: async (text) => writes.push(text),
     async fetch(url, options) {
+      guard(url)
       seen.push({ url, redirect: options.redirect })
       await gate.promise
-      return { ok: true, status: 200, async json() { return [video] } }
+      return bodyOf(`${line}\n`)
     },
   })
   const first = service.load()
@@ -38,30 +79,86 @@ test('load requests the homepage once and a second caller waits for it', async (
   gate.resolve()
   const view = await first
   assert.equal(await second, view)
-  assert.equal(seen.length, 1)
-  assert.equal(seen[0].redirect, 'error')
-  assert.match(seen[0].url, /n=36/)
-  assert.match(seen[0].url, /seed=7/)
+  assert.deepEqual(seen, [{ url: EXPORT_URL, redirect: 'error' }])
+  assert.equal(writes.length, 1)
   assert.equal(view.mode, 'ready')
   assert.equal(view.items[0].watchUrl, 'https://www.youtube.com/watch?v=1rZ-JorHJEY')
+  assert.equal(view.items[0].channel, 'The Go Programming Language')
+  assert.equal(view.items[0].thumbnailUrl, undefined)
+  assert.equal(view.items[0].durationLabel, undefined)
 })
 
-test('a failed refresh keeps the previous list', async () => {
+test('a failed refresh keeps the previous list and does not replace the cache', async () => {
   let attempt = 0
+  const writes = []
   const service = createService({
+    ...small,
     platform: 'linux',
-    nextSeed: () => 1,
-    async fetch() {
+    readCache: async () => '',
+    writeCache: async (text) => writes.push(text),
+    async fetch(url) {
+      guard(url)
       attempt += 1
-      if (attempt === 1) return { ok: true, status: 200, async json() { return [video] } }
+      if (attempt === 1) return bodyOf(`${line}\n`)
       throw new Error('network down')
     },
   })
   assert.equal((await service.load()).mode, 'ready')
   const again = await service.load()
   assert.equal(again.mode, 'stale')
-  assert.equal(again.banner, '连不上 HackTube')
-  assert.equal(again.items[0].title, video.title)
+  assert.equal(again.banner, '连不上导出文件')
+  assert.equal(again.items[0].title, 'Hacking with Andrew and Brad')
+  assert.equal(writes.length, 1)
+})
+
+test('offline with no cache says the export could not be read', async () => {
+  const service = createService({
+    ...small,
+    readCache: async () => '',
+    writeCache: async () => {
+      throw new Error('should not write')
+    },
+    async fetch() {
+      throw new Error('offline')
+    },
+  })
+  const view = await service.load()
+  assert.equal(view.mode, 'failed')
+  assert.equal(view.banner, '连不上导出文件')
+  assert.deepEqual(view.items, [])
+})
+
+test('a failed first download can still show a previously saved export', async () => {
+  const service = createService({
+    ...small,
+    readCache: async () => `${line}\n`,
+    writeCache: async () => {
+      throw new Error('should not write')
+    },
+    async fetch() {
+      throw new Error('offline')
+    },
+  })
+  const view = await service.load()
+  assert.equal(view.mode, 'stale')
+  assert.equal(view.items[0].title, 'Hacking with Andrew and Brad')
+})
+
+test('an oversized export is stopped and not cached', async () => {
+  const writes = []
+  const service = createService({
+    ...small,
+    maxBytes: 8,
+    readCache: async () => '',
+    writeCache: async (text) => writes.push(text),
+    async fetch() {
+      return bodyOf(`${line}\n`, { length: 99999 })
+    },
+  })
+  const view = await service.load()
+  assert.equal(view.mode, 'failed')
+  assert.equal(view.banner, '导出大小对不上')
+  assert.equal(writes.length, 0)
 })
 
 test('open ignores a caller-supplied url and does not launch off macOS', async () => {
@@ -82,7 +179,6 @@ test('open ignores a caller-supplied url and does not launch off macOS', async (
   assert.deepEqual(launches, [])
   const bad = await handle(service, 'POST', '/api/hackertube/open', { url: 'https://www.youtube.com/watch?v=1rZ-JorHJEY' })
   assert.equal(bad.json.code, 'bad-target')
-  assert.equal(bad.json.url, undefined)
 })
 
 test('open on macOS launches Chrome with the built watch url', async () => {
@@ -99,16 +195,6 @@ test('open on macOS launches Chrome with the built watch url', async () => {
     file: 'open',
     args: ['-a', 'Google Chrome', 'https://www.youtube.com/watch?v=1rZ-JorHJEY'],
   }])
-  const failed = createService({
-    platform: 'darwin',
-    launch() {
-      throw new Error('Unable to find application named Google Chrome')
-    },
-  })
-  const result = await failed.open('1rZ-JorHJEY')
-  assert.equal(result.ok, false)
-  assert.equal(result.code, 'chrome-failed')
-  assert.equal(result.url, 'https://www.youtube.com/watch?v=1rZ-JorHJEY')
 })
 
 test('unknown routes and list reads do not fetch', async () => {

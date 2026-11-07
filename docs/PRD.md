@@ -18,20 +18,21 @@
 - 第一版只支持 Bill 的 Mac 本机；Harness 与 Chrome 在同一台电脑。不做远程支持。
 - Agent 工作时，在输入框上方显示一个轻量入口；不展示推荐视频。
 - 点击入口才打开侧栏视频列表，同时保留手动打开侧栏的入口。
-- 仅提供 HackTube 首页列表、手动刷新和点击跳转。
-- 每条显示标题、缩略图，以及首页实际提供的频道、时长等信息；缺失字段省略，不补造。
+- 仅提供一份视频列表、手动刷新和点击跳转。
+- 默认列表来自 HackerTube 官方导出 `videos.jsonl` 的前 36 条，不是线上 `/api/feed`。
+- 每条显示标题。导出里有频道才显示频道。不加载缩略图，不显示时长或其他未随导出提供的 YouTube 元数据。缺的字段省略，不补造。
 - 点击条目在本机 Chrome 打开对应 YouTube 视频，不交给系统默认浏览器替代 Chrome。
 - 不做内嵌播放器，不控制 YouTube 暂停。
 - 不做搜索、标题筛选、收藏、观看历史。
 
-“首页列表”不意味着抓取整站或历史分页；实际首页是否动态加载以及列表边界，须技术核实后明确。
+线上 `/api/feed` 的持续使用授权还没有核清。默认路径不再调用它，也不把「没找到禁止」写成「已经禁止」。
 
 ## 3. 使用流程
 
 1. 安装并启用插件后，用户可手动打开视频侧栏。
 2. Agent 开始工作时，显示轻量入口；不自动打开侧栏、Chrome 或视频。
-3. 点击入口打开侧栏，加载首页视频。
-4. 用户浏览或点击刷新重新获取数据。
+3. 点击入口打开侧栏，读取官方导出的文字列表。
+4. 用户浏览，或点击刷新重新下载这份导出。
 5. 点击有效条目，在本机 Chrome 打开对应 YouTube 页面。
 6. 后续播放由用户和 YouTube 决定；打开页面不等于保证自动开始播放。
 
@@ -43,13 +44,13 @@
 | --- | --- |
 | 提示显示 | Agent 工作且视频侧栏未显示时出现；已显示侧栏则不重复提示。 |
 | Agent 结束 | 隐藏工作提示，不自动关闭侧栏，不打断 Chrome 播放。 |
-| 列表顺序 | 跟随首页顺序，不额外推荐、排序或随机打乱。 |
+| 列表顺序 | 跟随 `videos.jsonl` 的原有顺序，取前 36 条。该文件按分数从高到低。不另做推荐、排序或随机打乱。 |
 | 首次打开 | 打开侧栏时加载，不定时刷新或后台轮询。 |
 | 重复打开 | 当前插件运行期间可复用最近成功列表；手动刷新获取最新数据。不要求跨重启持久缓存。 |
 | 首次加载失败 | 展示可理解的原因和重试入口，不用样例视频充当真实内容。 |
 | 刷新失败 | 保留最近成功列表并明确提示失败，避免旧内容冒充新内容。 |
 | 首页为空 | 显示暂无视频和刷新入口，与网络失败区分。 |
-| 图片失败 | 保留标题与可用信息，使用中性占位。 |
+| 图片 | 默认不请求缩略图，所以没有封面失败这一种状态。 |
 | Chrome 打开失败 | 提示失败，提供可复制链接；不悄悄改用默认浏览器。 |
 | 缺少有效目标 | 不允许该条跳转，说明原因，不猜测 YouTube 地址。 |
 
@@ -62,8 +63,8 @@
 | 本机安装 | 在 Bill 实际 Harness 环境启用，提供与实测一致的安装与启动说明。 |
 | 工作提示 | Agent 工作时出现轻量入口，没有推荐标题，不自行启动 Chrome。 |
 | 手动入口 | Agent 空闲时也能打开视频侧栏。 |
-| 数据真实性 | 与本次获取的首页核对条目标题、顺序、缩略图和可选信息，无虚构字段。 |
-| 刷新 | 重新请求数据；成功更新，失败保留原列表并提示。 |
+| 数据真实性 | 与官方 `videos.jsonl` 核对标题、顺序和频道。不出现缩略图、时长或编造字段。 |
+| 刷新 | 重新下载这份导出；成功则更新，失败则保留原列表并提示。默认不调用 `/api/feed`。 |
 | Chrome 跳转 | 有效条目在本机 Chrome 打开正确 YouTube 页面；默认浏览器不是 Chrome 时仍使用 Chrome。 |
 | 播放边界 | 无内嵌播放器；Agent 停止、关闭侧栏或切换对话时不主动暂停 YouTube。 |
 | 异常恢复 | 验证网络不可用、空列表、字段缺失、图片失败、打开失败时的反馈和恢复。 |
@@ -73,7 +74,7 @@
 
 - DeepSeek Harness 0.2.2-rc.1，桌面应用，配置档是 `desktop`。安装命令是 `dsh plugin --profile desktop add <仓库路径>`。先完全退出应用再装，装完再打开。
 - 右侧栏注册、底部「视频」和 `conversation.input.dock` 仍然可用。输入框上方入口订阅这条 slot 自带的 `useSession`，工作状态是 `snapshot.running`。收起右侧栏后列表面板仍挂在文档里，并保留上次的宽度，只是被窗口裁掉。所以“侧栏正在显示”看宿主标在面板上的 `data-sidebar-right-open`，再确认它有一块落在窗口里，不是看元素自身宽高。
-- `open -a "Google Chrome"` 会打开 Chrome。已用首页条目 `4PaWFYm0kEw` 打开 `https://www.youtube.com/watch?v=4PaWFYm0kEw`。
+- `open -a "Google Chrome"` 会打开 Chrome。较早的一次检查用过条目 `4PaWFYm0kEw`。那次用的是线上首页列表，不能当作这次导出列表已经在 Mac 上验收。
 - 切换对话时侧栏是否被 Harness 卸载，还没有单独验收。参考插件把侧栏标签算在当前对话上。本插件不承诺换对话后侧栏还开着。
 
 ## 9. 实现时已核实的边界
@@ -81,8 +82,9 @@
 这些是写插件时对着当前参考仓库和 HackTube 首页核对过的事实，不是 Mac 验收结果。
 
 - 参考插件 `frostming/dsh-hongguo` 的 Host 用 `apply(ctx)` 注册 `/api/...` 前缀。Client 用 `sidebarRightTabs.register`、`sidebar.right.pane.tab`、`sidebar.footer.action` 和 `conversation.input.dock`。工作提示读 `useSessionStatus` 的 `running`。侧栏是否正在显示，它查的是当前页面里的面板，而不是跨会话的标签列表。它打开系统浏览器用的是 `open` 或 `xdg-open`，不是指定 Chrome。
-- HackTube 首页第一屏请求 `GET https://hackertube.org/api/feed?offset=0&n=36&seed=<数字>`。响应是视频数组，顺序就是这次 seed 的顺序。响应没有 `Access-Control-Allow-Origin`，所以由 Host 去请求。插件不跟无限滚动，也不读全库 `/api/list`。
-- 展示用到 `title`、`thumbnail`、`channel`、`duration_s`、`vid`。`vid` 只接受 11 位 YouTube id。打开地址由插件拼成 `https://www.youtube.com/watch?v=` 加这个 id。调用方传来的其它 URL 不采用。
+- 2026-11-07 读过 About、`/download/DATA.md` 和 ODC-By 1.0 原文。导出文件允许再用来做另一种界面，并要求注明 HackerTube 与 open-index/hacker-news。许可覆盖数据库，不自动覆盖每一项素材、软件或商标。线上 `/api/feed`、缩略图和时长没有同样明确的授权。详见 `docs/DATA-NOTICE.md`。
+- 默认下载 `https://hackertube.org/download/videos.jsonl`。只取标题和频道，地址由 11 位 `vid` 拼成 `https://www.youtube.com/watch?v=`。不读取调用方传来的其它 URL。
+- 线上首页接口仍然存在，形式是 `GET https://hackertube.org/api/feed?offset=0&n=36&seed=<数字>`。默认代码不再调用它。
 - macOS 上启动命令是 `open`，参数为 `-a`、`Google Chrome`、上面这个地址。参数分开传，不拼进 shell。其它系统直接失败，并给出可复制地址。
 
 ## 7. 非目标

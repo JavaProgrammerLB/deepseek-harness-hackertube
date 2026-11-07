@@ -45,7 +45,7 @@ window.__ModuleLoader__.load({
       if (!(running === true && sidebarVisible !== true)) return null
       return h(React.Fragment, null,
         h('style', null, '.ht-prompt { display: inline-flex; align-self: flex-start; width: fit-content; margin: 8px 12px; border: 1px solid #ccc; background: #fff; color: #1c1c1c; border-radius: 999px; padding: 6px 12px; font: 14px/1.4 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; cursor: pointer; }'),
-        h('button', { type: 'button', className: 'ht-prompt', onClick: openList }, '看首页视频'))
+        h('button', { type: 'button', className: 'ht-prompt', onClick: openList }, '看视频列表'))
     }
 
     function FooterButton(props) {
@@ -55,18 +55,12 @@ window.__ModuleLoader__.load({
         {
           type: 'button',
           className: 'ht-foot',
-          title: '打开首页视频',
-          'aria-label': '打开首页视频',
+          title: '打开视频列表',
+          'aria-label': '打开视频列表',
           onClick: openList,
         },
         wide ? '视频' : '视',
       )
-    }
-
-    function Thumb({ src }) {
-      const [broken, setBroken] = React.useState(false)
-      if (broken) return h('div', { className: 'ht-ph', role: 'img', 'aria-label': '没有封面' })
-      return h('img', { src, alt: '', onError: () => setBroken(true) })
     }
 
     function Panel() {
@@ -138,24 +132,32 @@ window.__ModuleLoader__.load({
       return h('div', { className: 'ht-root' },
         h('style', null, CSS),
         h('div', { className: 'ht-bar' },
-          h('strong', null, '首页'),
+          h('strong', null, '导出列表'),
           h('button', { type: 'button', onClick: refresh }, '刷新')),
         problem ? h('div', { className: 'ht-problem' },
           h('p', null, problem.message),
           problem.url ? h('input', { readOnly: true, value: problem.url, onFocus: (event) => event.target.select() }) : null,
           problem.url ? h('button', { type: 'button', onClick: () => copyUrl(problem.url) }, '复制链接') : null,
           copyNote ? h('p', null, copyNote) : null) : null,
-        renderBody(view, openItem))
+        renderBody(view, openItem),
+        h('p', { className: 'ht-credit' },
+          '列表来自 ',
+          h('a', { href: 'https://hackertube.org/', target: '_blank', rel: 'noopener noreferrer' }, 'HackerTube'),
+          ' 的导出数据，许可是 ',
+          h('a', { href: 'https://opendatacommons.org/licenses/by/1-0/', target: '_blank', rel: 'noopener noreferrer' }, 'ODC-By 1.0'),
+          '。请同时注明 ',
+          h('a', { href: 'https://huggingface.co/datasets/open-index/hacker-news', target: '_blank', rel: 'noopener noreferrer' }, 'open-index/hacker-news'),
+          '。本插件是独立第三方，未获这些项目背书。'))
     }
 
     function renderBody(view, openItem) {
-      if (!view || view.mode === 'loading') return h('p', { className: 'ht-note' }, '正在读取首页')
+      if (!view || view.mode === 'loading') return h('p', { className: 'ht-note' }, '正在读取导出列表')
       if (view.mode === 'failed') {
         return h('div', null,
-          h('p', { className: 'ht-note' }, view.banner || '读取首页失败'),
+          h('p', { className: 'ht-note' }, view.banner || '读取导出失败'),
           h('p', { className: 'ht-note' }, '点刷新再试一次。'))
       }
-      if (view.mode === 'empty') return h('p', { className: 'ht-note' }, '首页现在没有视频。点刷新再看。')
+      if (view.mode === 'empty') return h('p', { className: 'ht-note' }, '导出里没有可显示的标题。点刷新再看。')
       return h('div', null,
         view.mode === 'refreshing' ? h('p', { className: 'ht-note' }, '正在刷新') : null,
         view.mode === 'stale' ? h('p', { className: 'ht-note' }, `刷新失败，仍显示上次的列表。${view.banner || ''}`) : null,
@@ -167,22 +169,18 @@ window.__ModuleLoader__.load({
       const text = h('div', { className: 'ht-copy' },
         h('span', { className: 'ht-title' }, item.title),
         renderMeta(item),
-        item.vid ? null : h('span', { className: 'ht-miss' }, '这条没有可打开的 YouTube 地址'))
-      const thumb = item.thumbnailUrl
-        ? h(Thumb, { src: item.thumbnailUrl })
-        : h('div', { className: 'ht-ph', role: 'img', 'aria-label': '没有封面' })
-      if (!item.vid) return h('div', { className: 'ht-row' }, thumb, text)
+        item.vid ? h('span', { className: 'ht-open' }, '用 Chrome 打开') : h('span', { className: 'ht-miss' }, '这条没有可打开的 YouTube 地址'))
+      if (!item.vid) return h('div', { className: 'ht-row' }, text)
       return h('button', {
         type: 'button',
         className: 'ht-row',
         onClick: () => openItem(item),
-      }, thumb, text, h('span', { className: 'ht-open' }, '用 Chrome 打开'))
+      }, text)
     }
 
     function renderMeta(item) {
-      const parts = [item.channel, item.durationLabel].filter(Boolean)
-      if (!parts.length) return null
-      return h('span', { className: 'ht-meta' }, parts.join(' · '))
+      if (!item.channel) return null
+      return h('span', { className: 'ht-meta' }, item.channel)
     }
 
     return {
@@ -200,7 +198,7 @@ window.__ModuleLoader__.load({
               id: 'hackertube',
               order: 40,
               title: () => '首页视频',
-              description: () => '打开 HackTube 首页列表',
+              description: () => '打开 HackerTube 导出的文字列表',
             }],
           }), 'hackertube: tab')
         }
@@ -258,11 +256,12 @@ const CSS = `
 .ht-problem p { margin: 0 0 6px; }
 .ht-problem input { width: 100%; margin-bottom: 6px; font: 12px/1.4 ui-monospace, monospace; }
 .ht-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.ht-row { width: 100%; display: flex; gap: 10px; align-items: center; text-align: left; border: 0; background: transparent; padding: 4px; font: inherit; color: inherit; }
+.ht-row { width: 100%; display: block; text-align: left; border: 0; background: transparent; padding: 6px 2px; font: inherit; color: inherit; }
 button.ht-row { cursor: pointer; }
-.ht-row img, .ht-ph { width: 128px; height: 72px; flex: none; border-radius: 6px; object-fit: cover; background: #e6e6e6; }
 .ht-copy { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .ht-title { font-weight: 600; }
 .ht-meta, .ht-miss, .ht-open { color: #666; font-size: 12px; }
+.ht-credit { margin: 16px 0 0; color: #555; font-size: 12px; line-height: 1.5; }
+.ht-credit a { color: inherit; }
 .ht-prompt { display: inline-flex; align-self: flex-start; width: fit-content; margin: 8px 12px; border: 1px solid #ccc; background: #fff; color: #1c1c1c; border-radius: 999px; padding: 6px 12px; }
 `
