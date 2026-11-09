@@ -20,21 +20,15 @@ Agent 开始工作、并且侧栏没开着时，输入框上方多出一句「�
 
 ## 怎么安装
 
-用在桌面版 DeepSeek Harness，配置档是 `desktop`。安装方式在 0.2.2-rc.1 上对过。先完全退出应用，装完再打开。
+用在桌面版 DeepSeek Harness，配置档是 `desktop`。先打开一次应用，让这个配置档生成，然后完全退出。装完再打开。
 
-`dsh` 在应用包里：
-
-```sh
-dsh="/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"
-```
-
-用本机检出的仓库路径安装。
+应用自带的 `dsh` 才能改 `desktop`。从 npm 装进 PATH 的 `dsh` 会拒绝这个配置档。`--profile desktop` 要写在 `add` 前面。
 
 ```sh
-"$dsh" plugin --profile desktop add /path/to/deepseek-harness-hackertube
+"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh" plugin --profile desktop add github:JavaProgrammerLB/deepseek-harness-hackertube
 ```
 
-命令会把 `dsh-hackertube` 写进 `~/.dsh/profiles/desktop`。然后完全退出并重新打开 DeepSeek Harness。
+仓库已经在本机时，把最后的 `github:JavaProgrammerLB/deepseek-harness-hackertube` 换成仓库的绝对路径。
 
 ## 怎么用
 
