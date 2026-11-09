@@ -2,9 +2,11 @@
 
 DeepSeek Harness 插件。Agent 在干活时，侧栏可以翻 [HackTube](https://hackertube.org/) 首页；点一条，用这台 Mac 上的 Chrome 打开对应的 YouTube。插件只负责把片子找出来并跳过去，不负责播放。
 
-![等它干活，翻一页首页。左起：工作时的入口、首页侧栏、点开后的 Chrome](docs/showcase.png)
+![工作时，输入框上方出现「看首页视频」。侧栏底部一直有「视频」。](docs/entries.jpg)
 
-效果示意，三步画在同一张图里。片子取自 HackTube 首页的一次真实返回。
+![点开之后，右侧列出首页。](docs/home.jpg)
+
+片子取自 HackTube 首页的一次真实返回。
 
 ## 能做什么
 
